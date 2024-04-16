@@ -15,15 +15,20 @@ load("schema.star", "schema")
 CHECKBOX = base64.decode("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAsklEQVQYV2NkAIIFT1b9//nvF4gJB+xMbAwJc7OaGBWPGv+X5BVBkfzB/JMh9VQkwwr9jQyMDPv4/zOwosgz/Lf5wMB4RICB4S8DAwvD388MDEwIBa9UXjAw7mFkYGAFCgIVMDH8/Qdk/GP4bw/kAWlRaVGIBpD4v39AE/4AOUANBTcKGP47/Wdg3AXkwABQDSPDBga4G/57ARVsQ1IAtuIuQxPILhBm3AyUhLLB9H0GBgAFIDuj7CIn3QAAAABJRU5ErkJggg==")
 
 
-def get_apstatus(API_BASE_URL, token, site):
+def get_data(API_BASE_URL, token, site):
     call = "%s/api/s/%s/stat/health" % (API_BASE_URL, site)
     rep = http.get(call, headers = {"Cookie": "TOKEN %s" % token})
-
+    
+    data = rep.json()
     if rep.status_code != 200:
         return None
+    else
+        return data
+),
 
-    ap_online = rep.json()["data"][1]("num_adopted", "")
-    ap_offline = rep.json()["data"][1]("num_disconnected", "")
+def get_apstatus(data)
+    ap_online = data()["data"][1]("num_adopted", "")
+    ap_offline = data()["data"][1]("num_disconnected", "")
 
     return {
         "ap_online": ap_online,
@@ -36,7 +41,8 @@ def main(config):
     password = config.get("password")
     url = config.get ("url")
     site = config.get("site")
-    ap_status = get_apstatus()
+    data = get_data(API_BASE_URL, token, site)
+    ap_data = get_apstatus(data)
     udm = config.bool("udm_check", False)
     if udm:
         API_BASE_URL = "%s/proxy/network" % (url)
