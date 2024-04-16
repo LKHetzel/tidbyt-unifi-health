@@ -6,10 +6,14 @@ Author: LKHetzel
 """
 
 load("encoding/base64.star", "base64")
+load("encoding/json.star", "json")
 load("http.star", "http")
-load("math.star", "math")
 load("render.star", "render")
 load("schema.star", "schema")
+
+# Graphics
+CHECKBOX = base64.decode("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAsklEQVQYV2NkAIIFT1b9//nvF4gJB+xMbAwJc7OaGBWPGv+X5BVBkfzB/JMh9VQkwwr9jQyMDPv4/zOwosgz/Lf5wMB4RICB4S8DAwvD388MDEwIBa9UXjAw7mFkYGAFCgIVMDH8/Qdk/GP4bw/kAWlRaVGIBpD4v39AE/4AOUANBTcKGP47/Wdg3AXkwABQDSPDBga4G/57ARVsQ1IAtuIuQxPILhBm3AyUhLLB9H0GBgAFIDuj7CIn3QAAAABJRU5ErkJggg==")
+
 
 def get_apstatus(API_BASE_URL, token, site):
     call = "%s/api/s/%s/stat/health" % (API_BASE_URL, site)
@@ -18,13 +22,21 @@ def get_apstatus(API_BASE_URL, token, site):
     if rep.status_code != 200:
         return None
 
-    return rep.json()
+    ap_online = rep.json()["data"][1]("num_adopted", "")
+    ap_offline = rep.json()["data"][1]("num_disconnected", "")
 
+    return {
+        "ap_online": ap_online,
+        "ap_offline": ap_offline,
+    }
+
+),
 def main(config):
     username = config.get("username")
     password = config.get("password")
     url = config.get ("url")
     site = config.get("site")
+    ap_status = get_apstatus()
     udm = config.bool("udm_check", False)
     if udm:
         API_BASE_URL = "%s/proxy/network" % (url)
@@ -49,6 +61,29 @@ def main(config):
             ),
         ],
     )
+    ap_render = render.Column(
+        children = [
+            render.Row(
+                cross_align = "center",
+                children = [render.Padding(render.Image(src = CHECKBOX, width = 7, height = 7), pad = (0, 0, 0, 2))],
+            ),
+            render.Text(usage_data["upload"]["unit"], font = "tom-thumb"),
+        ],
+        cross_align = "center",
+    )
+
+    data_row = render.Padding(
+        child = render.Row(
+            children = [
+                ap_render,
+            ],
+            expanded = True,
+            main_align = "space_around",
+            cross_align = "end",
+        ),
+        pad = (0, 2, 0, 3),
+    )
+
 
     return render.Root(
         child = render.Column(
