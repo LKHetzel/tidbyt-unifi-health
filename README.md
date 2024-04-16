@@ -1,6 +1,8 @@
 # Unifi AP Health
 ## Shows how many APs are online or offline on a Ubiquiti Unifi Network
 
+![preview image](test.webp "Unifi AP Health")
+
 # Requirements (PLEASE READ CAREFULLY!)
 This Tidbyt app does not "just work". A fair amount of one-time setup is required. If you have configured this for another Unifi Tidbyt App, you can add the app and skip the Prerequisite Setup.
 
