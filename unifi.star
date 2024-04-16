@@ -14,44 +14,45 @@ load("schema.star", "schema")
 # Graphics
 CHECKBOX = base64.decode("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAsklEQVQYV2NkAIIFT1b9//nvF4gJB+xMbAwJc7OaGBWPGv+X5BVBkfzB/JMh9VQkwwr9jQyMDPv4/zOwosgz/Lf5wMB4RICB4S8DAwvD388MDEwIBa9UXjAw7mFkYGAFCgIVMDH8/Qdk/GP4bw/kAWlRaVGIBpD4v39AE/4AOUANBTcKGP47/Wdg3AXkwABQDSPDBga4G/57ARVsQ1IAtuIuQxPILhBm3AyUhLLB9H0GBgAFIDuj7CIn3QAAAABJRU5ErkJggg==")
 
+def UDMAuth(API_AUTH_URL, USERNAME, PASSWORD):
+    jsonBody = {"username": USERNAME, "password": PASSWORD}
+    resp = http.post(API_AUTH_URL, headers = {"Content-Type": "application/json"}, json_body = jsonBody)
+    headers = resp.headers
+    cookie = headers["Set-Cookie"]
+    return str(cookie)
 
-def get_data(API_BASE_URL, token, site):
-    call = "%s/api/s/%s/stat/health" % (API_BASE_URL, site)
-    rep = http.get(call, headers = {"Cookie": "TOKEN %s" % token})
-    
-    data = rep.json()
-    if rep.status_code != 200:
-        return None
-    else
-        return data
-),
+def getHealthData(API_BASE_URL, AUTH_TOKEN, SITE):
+    print("get status of udm from", API_BASE_URL)
+    call = "%s/api/s/%s/stat/health" % (API_BASE_URL, SITE)
+    print("getting from:", call)
+    resp = http.get(call, headers = {"cookie": "%s" % AUTH_TOKEN})
+    data = resp.json()
+    scode = str(resp.status_code)
+#    errtext = "Error"
+#    if scode != 200:
+#        return errtext
+#    else:
+    return data
 
-def get_apstatus(data)
-    ap_online = data()["data"][1]("num_adopted", "")
-    ap_offline = data()["data"][1]("num_disconnected", "")
 
-    return {
-        "ap_online": ap_online,
-        "ap_offline": ap_offline,
-    }
-
-),
 def main(config):
-    username = config.get("username")
-    password = config.get("password")
-    url = config.get ("url")
-    site = config.get("site")
-    data = get_data(API_BASE_URL, token, site)
-    ap_data = get_apstatus(data)
-    udm = config.bool("udm_check", False)
-    if udm:
-        API_BASE_URL = "%s/proxy/network" % (url)
-        API_AUTH_URL = "%s/api/auth/login" % (url)
+    USERNAME = config.get("username")
+    PASSWORD = config.get("password")
+    BASE_URL = config.get("url")
+    udm = config.bool("udm_check", True)
+    if udm == True:
+        API_BASE_URL = "%s/proxy/network" % (BASE_URL)
+        API_AUTH_URL = "%s/api/auth/login" % (BASE_URL)
     else:
-        API_BASE_URL = "%s/" % (url)
-        API_AUTH_URL = "%s/api/login" % (url)
+        API_BASE_URL = "%s/" % (BASE_URL)
+        API_AUTH_URL = "%s/api/login" % (BASE_URL)
+    SITE = config.get("site")
+    AUTH_TOKEN = UDMAuth(API_AUTH_URL, USERNAME, PASSWORD)
 
-    token = http.get(API_AUTH_URL, headers = {"Authorization": "Basic " + base64.encode(username + ":" + password)})
+    healthData = getHealthData(API_BASE_URL, AUTH_TOKEN, SITE)
+    ap_online = (str(int(healthData["data"][0]["num_ap"])))
+    ap_offline = (str(int(healthData["data"][0]["num_disconnected"])))
+
 
 
 # Renders
@@ -63,37 +64,37 @@ def main(config):
                 main_align = "center",
                 cross_align = "center",
                 expanded = True,
-                children = [render.Text("Unifi Stats", height = 7, font = "tom-thumb", color = "#ffffff")],
+                children = [render.Text("Unifi APs", height = 7, font = "tom-thumb", color = "#ffffff")],
             ),
         ],
     )
-    ap_render = render.Column(
+    online = render.Stack(
         children = [
-            render.Row(
-                cross_align = "center",
-                children = [render.Padding(render.Image(src = CHECKBOX, width = 7, height = 7), pad = (0, 0, 0, 2))],
+            render.Column(
+                expanded=True,
+                main_align="space_evenly",
+                cross_align="start",
+                children=[
+                    render.Row(
+                        children=[
+                        render.Text("Online: ", font = "tom-thumb"), 
+                        render.Text(ap_online, font = "tom-thumb"),
+                        ]
+                    ),
+                    render.Row(
+                        children=[
+                        render.Text("Offline: ", font = "tom-thumb"), 
+                        render.Text(ap_offline, font = "tom-thumb"),
+                        ]
+                    ),
+                ],
             ),
-            render.Text(usage_data["upload"]["unit"], font = "tom-thumb"),
-        ],
-        cross_align = "center",
+        ]    
     )
-
-    data_row = render.Padding(
-        child = render.Row(
-            children = [
-                ap_render,
-            ],
-            expanded = True,
-            main_align = "space_around",
-            cross_align = "end",
-        ),
-        pad = (0, 2, 0, 3),
-    )
-
 
     return render.Root(
         child = render.Column(
-            children = [top_bar],
+            children = [top_bar, online],
         ),
     )
 
